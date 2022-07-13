@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(bing_wallpaper_daemon)
 
 add_executable(bing_wallpaper_daemon
-  src/main.cpp
+  main.cpp
 )
 
 include(FetchContent)

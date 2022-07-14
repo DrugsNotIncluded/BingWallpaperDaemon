@@ -1,13 +1,13 @@
 ## Bing daily wallpaper daemon
 
 ### Build:
-``` cmake
+```cmake
 mkdir build && cd build
 cmake ..
 ```
 
 ### Run:
-```
+```shell
 ./build/bing_wallpaper_daemon
 ```
 

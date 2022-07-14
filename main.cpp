@@ -2,6 +2,8 @@
 #include "cpr/cprtypes.h"
 #include "cpr/response.h"
 #include "cpr/session.h"
+#include <sched.h>
+#include <sys/types.h>
 #include <bits/types/time_t.h>
 #include <cstdlib>
 #include <ostream>
@@ -9,6 +11,7 @@
 #include <unistd.h>
 #include <nlohmann/json.hpp>
 #include <cpr/cpr.h>
+#include <stdlib.h>
 #include <string>
 #include <unistd.h>
 #include <vector>
@@ -91,27 +94,12 @@ bool download_file(std::string download_url) {
 	else {return false;}
 }
 
-std::string exec(const char* cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-
-    auto pipe = popen(cmd, "r");
-
-    if (!pipe) throw std::runtime_error("popen() failed!");
-
-    while (!feof(pipe)) {
-        if (fgets(buffer.data(), 128, pipe) != nullptr)
-            result += buffer.data();
-    }
-
-    auto rc = pclose(pipe);
-
-    if (rc == EXIT_SUCCESS) {
-
-    } else if (rc == EXIT_FAILURE) {
-
-    }
-    return result;
+void fork_exec(std::string command) {
+	pid_t pid = fork();
+	if (pid == 0) {
+		system(command.c_str());
+		exit(1);
+	}
 }
 
 time_t date_to_epoch(int year, int month, int day) {
@@ -133,6 +121,7 @@ void sleep_until_enddate() {
 	int day = stoi(enddate.substr(8,9));
 	auto enddate_time = date_to_epoch(year, month, day);
 	sleep_until(enddate_time);
+	std::cout << enddate_time << std::endl;
 }
 
 void daemon() {
@@ -145,23 +134,17 @@ void daemon() {
 		while (!check_new_image_awailable()) {usleep(stoi(configdata.interval));}
 		std::string image_url = get_wallpaper_link_from_info();
 		download_file(image_url);
-		exec(configdata.command.c_str());
+		fork_exec(configdata.command);
 	}
 }
 
 void init() {
 	std::cout << "[Parsing config]" << std::endl;
 	read_parse_config();
-	// std::cout << "Config:" << std::endl
-	// 		  << "wallpaper command: " << configdata.command << std::endl
-	// 		  << "region: " << configdata.region << std::endl
-	// 		  << "screen resolution: " <<  configdata.resolution << std::endl
-	// 		  << "update interval: " << configdata.interval << std::endl
-	// 		  << "image download path" << configdata.path << std::endl;
 	current_image_info = get_daily_wallpaper_info();
 	std::string image_url = get_wallpaper_link_from_info();
 	download_file(image_url);
-	exec(configdata.command.c_str());
+	fork_exec(configdata.command);
 }
 
 int main(int argc, char *argv[]) {
